@@ -22,7 +22,7 @@ assembly_info:
   assembly_informational_version: '{version}'
 install:
 - ps: >-
-    $AssemblyFile = "$env:APPVEYOR_PROJECT_NAME\Properties\AssemblyInfo.cs"
+    $AssemblyFile = "$env:Properties\AssemblyInfo.cs"
 
     $RegularExpression = [regex] '^\[assembly: AssemblyFileVersion\(\"(\d*\.\d*\.\d*)\.\d*\"\)\]$'
 
@@ -50,7 +50,7 @@ build:
   verbosity: minimal
 before_package:
 - cmd: >-
-    copy %APPVEYOR_PROJECT_NAME%\bin\%CONFIGURATION%\%APPVEYOR_PROJECT_NAME%.exe*
+    copy bin\%CONFIGURATION%\%APPVEYOR_PROJECT_NAME%.exe*
 
     echo %SITE%>>readme.txt
 
