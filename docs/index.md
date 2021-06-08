@@ -1,4 +1,4 @@
-# [Pop3cli]
+# Pop3cli
 
 Консольный POP3 клиент для получения всех вложений.
 
@@ -26,5 +26,4 @@
 
 Licensed under the [Apache License, Version 2.0].
 
-[Pop3cli]: https://diev.github.io/Pop3cli/
-[Apache License, Version 2.0]: LICENSE
+[Apache License, Version 2.0]: http://www.apache.org/licenses/LICENSE-2.0 "LICENSE"
