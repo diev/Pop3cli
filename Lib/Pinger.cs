@@ -136,6 +136,7 @@ namespace Lib
             }
 
             //Console.WriteLine("ping status: {0}", reply.Status);
+
             if (reply.Status == IPStatus.Success)
             {
                 Pinged = true;

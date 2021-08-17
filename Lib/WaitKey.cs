@@ -55,7 +55,6 @@ namespace Lib
             {
                 AppTrace.Information("Waiting canceled by user.");
             }
-
             else if (TimedOut)
             {
                 AppTrace.Information("Waiting timed out.");
@@ -86,7 +85,6 @@ namespace Lib
             {
                 AppTrace.Information("Waiting canceled by user.");
             }
-
             else if (TimedOut)
             {
                 AppTrace.Information("Waiting timed out.");
@@ -105,7 +103,7 @@ namespace Lib
             AppTrace.Information("Waiting a key...");
         }
 
-        class StatusChecker
+        private class StatusChecker
         {
             private int invokeCount;
             private readonly int maxCount;
@@ -137,7 +135,6 @@ namespace Lib
                             Pressed = true;
                         }
                     }
-
                     else
                     {
                         invokeCount = 0;
@@ -145,7 +142,6 @@ namespace Lib
                         Pressed = true;
                     }
                 }
-
                 else if (invokeCount == maxCount)
                 {
                     invokeCount = 0;

@@ -53,7 +53,6 @@ namespace Lib
                 // Не вышло - так не вышло
                 Console.WriteLine(ex);
             }
-
         }
 
         public override void WriteLine(string message)

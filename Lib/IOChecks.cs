@@ -23,11 +23,12 @@ namespace Lib
     public static class IOChecks
     {
         #region Paths
+
         /// <summary>
         /// Checks if a directory exists. If not, tries to create.
         /// </summary>
         /// <param name="dir">A directory to check or create.</param>
-        /// <returns>Returns the checked or created directory.</returns>
+        /// <returns>Returns the fullname of the checked or created directory.</returns>
         public static string CheckDirectory(string dir)
         {
             if (!Directory.Exists(dir))
@@ -59,7 +60,7 @@ namespace Lib
                 }
             }
 
-            return dir;
+            return Path.GetFullPath(dir);
         }
 
         /// <summary>
@@ -74,9 +75,11 @@ namespace Lib
 
             return value;
         }
+
         #endregion Paths
 
         #region Rights
+
         /// <summary>
         /// Проверяет наличие прав на запись в папке.
         /// </summary>
@@ -85,18 +88,19 @@ namespace Lib
         public static void TestRights(string path, string msg)
         {
             string file = Path.Combine(path, Path.GetRandomFileName());
+
             try
             {
                 CheckDirectory(path);
                 File.WriteAllText(file, "Test " + file);
                 File.Delete(file);
             }
-
             catch (Exception ex)
             {
                 AppExit.Error(msg + ": " + ex.Message);
             }
         }
+
         #endregion Rights
     }
 }

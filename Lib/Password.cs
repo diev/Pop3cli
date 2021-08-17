@@ -45,7 +45,6 @@ namespace Lib
                 {
                     return Encoding.ASCII.GetString(bytes);
                 }
-
                 else
                 {
                     Encoding encoding = Encoding.GetEncoding(encResult);

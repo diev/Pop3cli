@@ -44,7 +44,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EmailText.cs" />
     <Compile Include="Lib\App.cs" />
     <Compile Include="Lib\AppConfig.cs" />
     <Compile Include="Lib\AppConsoleListener.cs" />
@@ -59,12 +58,21 @@
     <Compile Include="Lib\Pinger.cs" />
     <Compile Include="Lib\StringExtension.cs" />
     <Compile Include="Lib\WaitKey.cs" />
-    <Compile Include="Pop3Client.cs" />
+    <Compile Include="Pop3\EmailUid.cs" />
+    <Compile Include="Mime\MimeChars.cs" />
+    <Compile Include="Mime\MimeEntityReturnCode.cs" />
+    <Compile Include="Mime\MimeParser.cs" />
+    <Compile Include="Pop3\Pop3ConnectionStateEnum.cs" />
+    <Compile Include="Pop3\Pop3Exception.cs" />
+    <Compile Include="Pop3\Pop3MailClient.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Mime\QuotedPrintable.cs" />
+    <Compile Include="Mime\MimeMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -36,7 +36,7 @@ namespace Lib
         public static int WarningCount { get; private set; } = 0;
         public static int ErrorCount { get; private set; } = 0;
 
-        #endregion
+        #endregion Public properties
 
         #region Constructors
 
@@ -45,7 +45,7 @@ namespace Lib
              TraceSource = new TraceSource(Assembly.GetCallingAssembly().GetName().Name, SourceLevels.All);
         }
 
-        #endregion
+        #endregion Constructors
 
         #region Public methods
 
@@ -174,7 +174,7 @@ namespace Lib
             HelperTraceIf(TraceEventType.Warning, condition, format, values);
         }
 
-        #endregion
+        #endregion Public methods
 
         #region Private methods
 
@@ -196,7 +196,6 @@ namespace Lib
                 {
                     ErrorCount++;
                 }
-
                 else if (category == TraceEventType.Warning)
                 {
                     WarningCount++;
@@ -211,6 +210,6 @@ namespace Lib
             HelperTraceIf(category, true, message);
         }
 
-        #endregion
+        #endregion Private methods
     }
 }

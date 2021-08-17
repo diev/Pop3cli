@@ -23,6 +23,7 @@ namespace Lib
     public static class BaseConvert
     {
         #region Base36
+
         /// <summary>
         /// Таблица символов для перекодировки дат от 1 до 31 в один знак (Base36)
         /// </summary>
@@ -73,9 +74,11 @@ namespace Lib
 
             return new string(tmp, i, n);
         }
-        #endregion
+
+        #endregion Base36
 
         #region Base64
+
         /// <summary>
         /// Возвращает строку после преобразования из кодировки Base64
         /// </summary>
@@ -88,7 +91,6 @@ namespace Lib
             {
                 return string.Empty;
             }
-
             else
             {
                 byte[] bytes = Convert.FromBase64String(toDecode);
@@ -110,7 +112,6 @@ namespace Lib
             {
                 return string.Empty;
             }
-
             else
             {
                 byte[] bytes = Encoding.ASCII.GetBytes(toEncode);
@@ -119,9 +120,10 @@ namespace Lib
                 return value;
             }
         }
-        #endregion
+        #endregion Base64
 
         #region Base128
+
         /// <summary>
         /// Генерация таблицы символов для Base36 и т.д. (уже нестандартно)
         /// </summary>
@@ -151,29 +153,36 @@ namespace Lib
 
             //Base62+
             c[k++] = (char)95;
+
             for (int i = 33; i <= 47; i++) //!"#$%&'()*+,-./
             {
                 c[k++] = (char)i;
             }
+
             for (int i = 58; i <= 64; i++) //:;<=>?@
             {
                 c[k++] = (char)i;
             }
+
             for (int i = 91; i <= 94; i++) //[\]^
             {
                 c[k++] = (char)i;
             }
+
             for (int i = 123; i <= 126; i++) //{|}~
             {
                 c[k++] = (char)i;
             }
+
             c[k++] = (char)96;
 
             return new string(c, 0, k);
         }
-        #endregion
+
+        #endregion Base128
 
         #region Bank
+
         /// <summary>
         /// Возвращает строку в рублях из суммы в копейках
         /// </summary>
@@ -184,7 +193,10 @@ namespace Lib
             string value = string.Format("{0:N0}.{1:00}", sumInKop / 100, Math.Abs(sumInKop) % 100);
             return value;
         }
-        #endregion
+
+        #endregion Bank
+
+        #region Helpers
 
         /// <summary>
         /// Конвертирует строку/текст списка с любыми разделителями в массив строк
@@ -200,5 +212,7 @@ namespace Lib
 
             return value;
         }
+
+        #endregion Helpers
     }
 }

@@ -19,6 +19,10 @@
 
 using Lib;
 
+using Mime;
+
+using Pop3;
+
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -53,6 +57,13 @@ namespace Pop3cli
                     {
                         string host = settings["Host"];
 
+                        if (host.Contains("*"))
+                        {
+                            AppTrace.Error("Требуется настроить config!");
+
+                            Usage();
+                        }
+
                         string src = settings["Src"].ExpandPath();
                         string bak = settings["Bak"].ExpandPath();
                         string dst = settings["Dst"].ExpandPath();
@@ -60,9 +71,9 @@ namespace Pop3cli
                         if (string.IsNullOrEmpty(host))
                         {
                             AppTrace.Information("Распаковка вложений");
+
                             ExtractAttachmentsFromFiles(src, dst);
                         }
-
                         else
                         {
                             AppTrace.Information("Загрузка сообщений");
@@ -86,11 +97,11 @@ namespace Pop3cli
                         {
                             Usage();
                         }
-
                         else
                         {
-                            string dst = settings["Dst"].ExpandPath();
                             AppTrace.Information($"Распаковка вложений из {arg}");
+
+                            string dst = settings["Dst"].ExpandPath();
                             ExtractAttachmentsFromFiles(arg, dst);
                         }
                         break;
@@ -102,6 +113,7 @@ namespace Pop3cli
                         string arg2 = args[1];
 
                         AppTrace.Information($"Распаковка вложений из {arg1} в {arg2}");
+
                         ExtractAttachmentsFromFiles(arg1, arg2);
                         break;
                     }
@@ -117,7 +129,8 @@ namespace Pop3cli
             Console.WriteLine("======== Press Enter to end program");
             Console.ReadLine();
 #endif
-            AppExit.Information("Сделано.");
+            //AppExit.Information("Сделано.");
+            AppExit.Exit();
         }
 
         static void Usage()
@@ -142,7 +155,7 @@ namespace Pop3cli
 
                 foreach (string file in files)
                 {
-                    Extract(null, file, dst);
+                    Extract(file, dst);
                 }
             }
 
@@ -159,15 +172,13 @@ namespace Pop3cli
 
                 foreach (string file in files)
                 {
-                    Extract(null, file, dst);
+                    Extract(file, dst);
                 }
             }
-
             else if (File.Exists(src))
             {
-                Extract(null, src, dst);
+                Extract(src, dst);
             }
-
             else
             {
                 AppExit.Error($"{src} not found!");
@@ -179,14 +190,14 @@ namespace Pop3cli
             try
             {
                 //prepare pop client
-                var client = new Pop3.Pop3Client(host, port, ssl, user, pass)
+                var client = new Pop3MailClient(host, port, ssl, user, pass)
                 {
-                    IsAutoReconnect = true
+                    AutoReconnect = true
                 };
 
                 //remove the following line if no tracing is needed
                 //client.Trace += new Pop3.TraceHandler(Console.WriteLine);
-                client.Trace += new Pop3.TraceHandler(AppTrace.Verbose);
+                client.Trace += new TraceHandler(AppTrace.Verbose);
                 client.ReadTimeout = 180000; //give server 180 seconds to answer
 
                 //establish connection
@@ -205,8 +216,13 @@ namespace Pop3cli
 
                     if (!File.Exists(path))
                     {
-                        client.GetRawEmail(EmailUids[i].EmailId, out string text);
-                        Extract(text, path, dst);
+                        int id = EmailUids[i].EmailId;
+
+                        if (client.GetRawEmail(id, out string text))
+                        {
+                            File.WriteAllText(path, text);
+                            Extract(path, dst);
+                        }
                     }
                 }
 
@@ -245,44 +261,51 @@ namespace Pop3cli
             catch (Exception ex)
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("Run Time Error Occured:")
+                sb
+                    .AppendLine("Run Time Error Occured:")
                     .AppendLine(ex.Message)
                     .AppendLine(ex.StackTrace);
+
                 AppTrace.Error(sb);
             }
         }
 
-        private static void Extract(string text, string path, string folder)
+        private static void Extract(string path, string folder)
         {
-            var email = new EmailText(text);
-
-            if (text == null)
+            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
+            using (var streamReader = new StreamReader(fileStream))
             {
-                email.Load(path);
+                MimeParser parser = new MimeParser(streamReader);
+
+                if (parser.GetEmail(out MimeMessage message))
+                {
+#if DEBUG
+                    Console.WriteLine(message.MailStructure());
+#endif
+                    var sb = new StringBuilder();
+                    sb
+                        .AppendLine($"[{Path.GetFileName(path)}] {message.DeliveryDate:dd.MM HH:mm} <{message.From.Address}> {message.From.DisplayName}")
+                        .AppendLine($"  {message.Subject}");
+
+                    if (!Directory.Exists(folder))
+                    {
+                        Directory.CreateDirectory(folder);
+                    }
+
+                    foreach (var attach in message.Attachments)
+                    {
+                        string name = attach.Name;
+                        sb.AppendLine($"  - {name}");
+
+                        using (var file = File.OpenWrite(Path.Combine(folder, name)))
+                        {
+                            attach.ContentStream.CopyTo(file);
+                        }
+                    }
+
+                    AppTrace.Information(sb);
+                }
             }
-
-            else
-            {
-                email.Save(path);
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{Path.GetFileName(path)}]")
-                .AppendLine($"  {email.From}, {email.Date:dd.MM HH:mm}")
-                .AppendLine($"  {email.Subject}");
-
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
-
-            foreach (var attach in email.Attachments)
-            {
-                sb.AppendLine($"  - {attach.Filename}");
-                email.SaveAttachment(attach, folder);
-            }
-
-            AppTrace.Information(sb);
         }
     }
 }

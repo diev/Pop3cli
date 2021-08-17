@@ -32,13 +32,16 @@ namespace Lib
         static AppConfig()
         {
             NameValueCollection settings = ConfigurationManager.AppSettings;
+
             foreach (string key in settings.AllKeys)
             {
                 string value = settings[key];
+
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     continue;
                 }
+
                 Add(key, value);
             }
         }
@@ -64,10 +67,12 @@ namespace Lib
         public static void Display()
         {
             Console.WriteLine();
+
             foreach (KeyValuePair<string, string> p in _baseDictionary)
             {
                 Console.WriteLine("\t{0}\t = {1}", p.Key, p.Value);
             }
+
             Console.WriteLine();
         }
 
@@ -81,6 +86,7 @@ namespace Lib
             {
                 _baseDictionary.Add(key, value);
             }
+
             Modified = true;
         }
 
@@ -90,6 +96,7 @@ namespace Lib
             {
                 return;
             }
+
             _baseDictionary.Add(key, value);
             Modified = true;
         }
@@ -98,6 +105,7 @@ namespace Lib
         {
             //return _baseDictionary[key]; // Exception if key does not exist!
             _baseDictionary.TryGetValue(key, out string value);
+
             return value;
         }
 
@@ -115,6 +123,7 @@ namespace Lib
         public static string GetPath(string key)
         {
             string value = _baseDictionary[key];
+
             if (value.Contains("{"))
             {
                 string format = value.Replace("%Now%", "0").Replace("%App%", "1");

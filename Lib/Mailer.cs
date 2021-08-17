@@ -67,6 +67,7 @@ namespace Lib
             switch (Method)
             {
                 case SmtpDeliveryMethod.Network:
+
                     SmtpNetworkElement settings = mailSettings.Smtp.Network;
 
                     _host = settings.Host;
@@ -90,12 +91,15 @@ namespace Lib
 
                     _user = settings.UserName;
                     _pass = Password.Decode(settings.Password);
+
                     break;
 
                 case SmtpDeliveryMethod.PickupDirectoryFromIis:
+
                     throw new NotImplementedException("Импорт настроек из IIS не предусмотрен.");
 
                 case SmtpDeliveryMethod.SpecifiedPickupDirectory:
+
                     SmtpSpecifiedPickupDirectoryElement pickup = mailSettings.Smtp.SpecifiedPickupDirectory;
 
                     _path = pickup.PickupDirectoryLocation;
@@ -113,11 +117,14 @@ namespace Lib
                         _path = Environment.ExpandEnvironmentVariables(_path);
                     }
 
-                    IOChecks.CheckDirectory(_path);
+                    _path = IOChecks.CheckDirectory(_path);
+
                     AppTrace.Verbose("See emails in \"{0}\".", _path);
+
                     break;
 
                 default:
+
                     throw new NotImplementedException("Такой вид настроек отправки почты не предусмотрен.");
             }
         }
@@ -159,6 +166,7 @@ namespace Lib
             switch (Method)
             {
                 case SmtpDeliveryMethod.Network:
+
                     _client = new SmtpClient(_host, _port)
                     {
                         UseDefaultCredentials = false,
@@ -166,13 +174,16 @@ namespace Lib
                         EnableSsl = _ssl
                         //Timeout = Timeout * 1000; // Ignored for Async
                     };
+
                     break;
 
                 case SmtpDeliveryMethod.SpecifiedPickupDirectory:
+
                     _client = new SmtpClient
                     {
                         PickupDirectoryLocation = _path
                     };
+
                     break;
             }
 
@@ -190,6 +201,7 @@ namespace Lib
                 //QUIT SMTP
                 _client.Dispose();
                 _client = null;
+
                 AppTrace.Verbose("SMTP stop.");
             }
         }
@@ -199,6 +211,7 @@ namespace Lib
             if (_queue.IsEmpty)
             {
                 AppTrace.Verbose("Queue is empty.");
+
                 return;
             }
 
@@ -212,20 +225,22 @@ namespace Lib
                 {
                     AppTrace.Verbose("[{0}] Dequeued sent.", drop.Subject);
                 }
-
                 else
                 {
                     AppTrace.Warning("[{0}] Dequeued unsent.", drop.Subject);
                 }
 
                 drop.Dispose();
+
                 return;
             }
 
             while (!_queue.IsEmpty)
             {
                 _queue.TryDequeue(out drop);
+
                 AppTrace.Warning("[{0}] Dropped from queue.", drop.Subject);
+
                 drop.Dispose();
             }
         }
@@ -240,7 +255,6 @@ namespace Lib
             {
                 AppTrace.Warning("Admin email is not set!");
             }
-
             else
             { 
                 Send(Admin, "Alert!", msg);
@@ -274,7 +288,6 @@ namespace Lib
                 {
                     email.Body = Signature;
                 }
-
                 else
                 {
                     email.Body = body + Environment.NewLine + Signature;
@@ -316,6 +329,7 @@ namespace Lib
                 }
 
                 _queue.Enqueue(email);
+
                 //AppTrace.Information("[{0}] Queued to send.", email.Subject);
                 AppTrace.Verbose("[{0}] to send", email.Subject);
             }
@@ -342,6 +356,7 @@ namespace Lib
                 if (_client == null)
                 {
                     AppTrace.Error("Ошибка инициализации SMTP.");
+
                     return;
                 }
             }
@@ -369,6 +384,7 @@ namespace Lib
             try
             {
                 //AppTrace.Verbose("[{0}] Sending...", email.Subject);
+
                 _client.SendAsync(email, userState);
             }
             catch (SmtpFailedRecipientsException ex)
@@ -382,11 +398,13 @@ namespace Lib
                         status == SmtpStatusCode.TransactionFailed)
                     {
                         AppTrace.Warning("Проблема с доступностью - повтор через 5 секунд.");
+
                         Thread.Sleep(5000);
+
                         AppTrace.Verbose("[{0}] Sending again...", email.Subject);
+
                         _client.SendAsync(email, userState);
                     }
-
                     else
                     {
                         AppTrace.Error("Отправка на {0} не состоялась: {1}",
@@ -397,6 +415,7 @@ namespace Lib
             catch (SmtpException ex)
             {
                 _client.SendAsyncCancel();
+
                 AppTrace.Error("Отправка прервана по ошибке соединения с сервером: " + ex.ToString());
             }
             //finally
@@ -433,11 +452,13 @@ namespace Lib
                 if (DateTime.Now > dt)
                 {
                     AppTrace.Error("Mail still not delivered.");
+
                     DropQueue();
                     break;
                 }
 
                 Thread.Sleep(1000);
+
                 AppTrace.Verbose("Final delivery waiting...");
 
                 Delivery();
@@ -459,18 +480,19 @@ namespace Lib
             if (e.Cancelled)
             {
                 AppTrace.Warning("[{0}] Send canceled.", token);
+
                 DropQueue(1);
             }
-
             else if (e.Error != null)
             {
                 AppTrace.Warning("[{0}] {1}", token, e.Error.ToString());
+
                 DropQueue(1);
             }
-
             else
             {
                 AppTrace.Information("[{0}] Message sent.", token);
+
                 DropQueue(1, true);
             }
 

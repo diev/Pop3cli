@@ -53,12 +53,10 @@ namespace Lib
             {
                 Console.ForegroundColor = ConsoleColor.White;
             }
-
             else if (message.Contains("Warning"))
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
             }
-
             else if (message.Contains("Error"))
             {
                 Console.ForegroundColor = ConsoleColor.Red;

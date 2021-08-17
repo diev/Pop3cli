@@ -73,6 +73,7 @@ namespace Lib
 
             _fileName = initializeData.ExpandPath();
             string path = Path.GetDirectoryName(_fileName);
+
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -97,17 +98,14 @@ namespace Lib
             {
                 dt = string.Format(format, DateTime.Now, Attributes["information"]);
             }
-
             else if (message.Contains("Warning"))
             {
                 dt = string.Format(format, DateTime.Now, Attributes["warning"]);
             }
-
             else if (message.Contains("Error"))
             {
                 dt = string.Format(format, DateTime.Now, Attributes["error"]);
             }
-
             else // Verbose
             {
                 dt = string.Format(format, DateTime.Now, Attributes["verbose"]);
