@@ -292,14 +292,14 @@ namespace Pop3cli
                         Directory.CreateDirectory(folder);
                     }
 
-                    foreach (var attach in message.Attachments)
+                    foreach (var attachment in message.Attachments)
                     {
-                        string name = attach.Name;
+                        string name = attachment.Name;
                         sb.AppendLine($"  - {name}");
 
                         using (var file = File.OpenWrite(Path.Combine(folder, name)))
                         {
-                            attach.ContentStream.CopyTo(file);
+                            attachment.ContentStream.CopyTo(file);
                         }
                     }
 

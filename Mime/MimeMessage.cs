@@ -190,6 +190,11 @@ namespace Mime
         /// </summary>
         public List<string> UnknowHeaderlines { get; set; } //
 
+        /// <summary>
+        /// Returns true if the message has attachments
+        /// </summary>
+        public bool HasAttachments => Attachments.Count > 0;
+
         #endregion Public properties
 
         #region Public methods
@@ -210,7 +215,8 @@ namespace Mime
             }
             else
             {
-                ContentType = new ContentType(contentTypeString.Trim());
+                ContentType = new ContentType(contentTypeString.Trim()
+                    .Replace(" = ", "="));
             }
 
             //set encoding (character set)
@@ -295,6 +301,40 @@ namespace Mime
             return child;
         }
 
+        /// <summary>
+        /// Save this attachment to a file.
+        /// </summary>
+        /// <param name="attachment">Attachment to save.</param>
+        /// <param name="path">Path to a file.</param>
+        public void SaveAttachmentToFile(Attachment attachment, string path)
+        {
+            //byte[] allBytes = new byte[attachment.ContentStream.Length];
+            //int bytesRead = attachment.ContentStream.Read(allBytes, 0, (int)attachment.ContentStream.Length);
+
+            //string destinationFile = @"C:\" + attachment.Name;
+
+            //BinaryWriter writer = new BinaryWriter(new FileStream(destinationFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None));
+            //writer.Write(allBytes);
+            //writer.Close();
+
+            using (var file = File.OpenWrite(path))
+            {
+                attachment.ContentStream.CopyTo(file);
+            }
+        }
+
+        /// <summary>
+        /// Save all attachments to files in a folder.
+        /// </summary>
+        /// <param name="path">Path to a folder for files.</param>
+        public void SaveAttachmentsToFolder(string path)
+        {
+            foreach (var attachment in Attachments)
+            {
+                SaveAttachmentToFile(attachment, Path.Combine(path, attachment.Name));
+            }
+        }
+
         #endregion Public methods
 
         #region Debug info
@@ -321,7 +361,7 @@ namespace Mime
             AppendLine("To    : {0}", entity.To);
             AppendLine("CC    : {0}", entity.CC);
             AppendLine("ReplyT: {0}", entity.ReplyToList);
-            AppendLine("Sub   : {0}", entity.Subject);
+            AppendLine("Subj  : {0}", entity.Subject);
             AppendLine("S-Enc : {0}", entity.SubjectEncoding);
 
             if (entity.DeliveryDate > DateTime.MinValue)
@@ -367,7 +407,9 @@ namespace Mime
                 DecodeEntity(child);
             }
 
-            if (entity.ContentType != null && entity.ContentType.MediaType != null && entity.ContentType.MediaType.StartsWith("multipart"))
+            if (entity.ContentType != null && 
+                entity.ContentType.MediaType != null && 
+                entity.ContentType.MediaType.StartsWith("multipart"))
             {
                 AppendLine("End {0}", entity.ContentType.ToString());
             }

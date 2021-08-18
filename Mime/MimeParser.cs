@@ -79,6 +79,11 @@ namespace Mime
 
         #region Public methods
 
+        /// <summary>
+        /// Reads the stream to get full Mime message
+        /// </summary>
+        /// <param name="message">Mime message</param>
+        /// <returns>true if read correctly</returns>
         public bool GetEmail(out MimeMessage message)
         {
             //prepare message, set defaults as specified in RFC 2046
@@ -103,6 +108,47 @@ namespace Mime
             return false;
         }
 
+        /// <summary>
+        /// Get the message body from a nested, multipart MIME message
+        /// </summary>
+        /// <param name="message">The message</param>
+        /// <param name="useHTML">Use the HTML version of the body if available</param>
+        /// <returns>The text of the message body</returns>
+        public string GetMessageBody(MimeMessage message, bool useHTML)
+        {
+            string body = string.Empty; // return value
+
+            if (string.IsNullOrEmpty(message.Body))
+            {
+                for (int i = message.Entities.Count - 1; i >= 0; i--)
+                {
+                    if (message.Entities[i].Body != string.Empty)
+                    {
+                        if ((useHTML == message.Entities[i].IsBodyHtml) || i == 0)
+                        {
+                            body = message.Entities[i].Body;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        body = GetMessageBody(message.Entities[i], useHTML);
+
+                        if (body != string.Empty)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                body = message.Body;
+            }
+
+            return body;
+        }
+        
         /// <summary>
         /// Tries to convert a string into an email address
         /// </summary>
@@ -261,7 +307,7 @@ namespace Mime
             }
 
             int charCount = byteArrayDecoder.GetCharCount(byteArray, 0, byteArray.Length);
-            char[] bodyChars = new Char[charCount];
+            char[] bodyChars = new char[charCount];
             _ = byteArrayDecoder.GetChars(byteArray, 0, byteArray.Length, bodyChars, 0);
 
             //convert char[] to string
@@ -275,17 +321,168 @@ namespace Mime
         /// <returns>Decoded readable string</returns>
         public string DecodeEncB(string s)
         {
+            #region Solution 1
+            //// decode "pelo=?ISO-8859-1?Q?usu=E1rio=2Exls?=" to "pelo usuário.xls"
+
+            ///* types of strings received
+            //Exemplo de arquivo XLS para download pelo usuário.xls
+            //Exemplo de arquivo XLS para_download pelo=?ISO-8859-1?Q?usu=E1rio=2Exls?=
+            //Exemplo de arquivo XLS para_downl?==?ISO-8859-1?Q?oad_pelo_usu=E1rio=2Exls?=
+            //Cópia de Exemplo de arquivo XLS para download pelo usuário.xls
+            //=?ISO-8859-1?Q?C=F3pia_de_Exemplo_de_arquivo_XLS_para_downl?==?ISO-8859-1?Q?oad_pelo_usu=E1rio=2Exls?=
+            //teste de acentuação áàãâ ÁÀÃÂ çÇ 1
+            //teste de =?ISO-8859-1?Q?acentua=E7=E3o_=E1=E0=E3=E2_=C1=C0=C3?= =?ISO-8859-1?Q?=C2_=E7=C7_1?=
+
+            //three kinds of ?=
+            //"?= " - end of 1o. segment
+            //"?=C2_" - coincidence: ? and =C2
+            //"?=" - end of last segment (not followed by space like end of 1o. segment)
+            //*/
+
+            //string decodedText = "";
+            //int initEncodedSegment, endEncodedSegment;
+
+            //while (true)
+            //{
+            //    if (s.Length == 0)
+            //    {
+            //        break;
+            //    }
+            //    else if (s.IndexOf("=?") == -1)
+            //    {
+            //        decodedText += s;
+            //        break;
+            //    }
+
+            //    // get encoded segment
+            //    initEncodedSegment = s.IndexOf("=?");
+
+            //    if (s.IndexOf("?= ") > -1)
+            //    {
+            //        endEncodedSegment = s.IndexOf("?= ") + 3; // Segment is followed by text (encoded or not)
+            //    }
+            //    else
+            //    {
+            //        if (s.LastIndexOf("?=") > -1)
+            //        {
+            //            endEncodedSegment = s.LastIndexOf("?=") + 2; // Segment goes to the end of the text
+            //        }
+            //        else
+            //        {
+            //            endEncodedSegment = s.Length; // Malformed text
+            //        }
+            //    }
+
+            //    if (initEncodedSegment > 0)
+            //    { // get not encoded text before encoded segment
+            //        decodedText += s.Substring(0, initEncodedSegment);
+            //    }
+
+            //    string originalSegment = s.Substring(initEncodedSegment, endEncodedSegment - initEncodedSegment);
+            //    string encodedSegment;
+
+            //    if (s.Length > endEncodedSegment)
+            //    { // encoded segment ends before end of original text
+            //        encodedSegment = s.Substring(initEncodedSegment + 2, endEncodedSegment - initEncodedSegment - 5); // get encoded segment without first =? and last ?=
+            //    }
+            //    else
+            //    {
+            //        encodedSegment = s.Substring(initEncodedSegment + 2, endEncodedSegment - initEncodedSegment - 4); // get encoded segment without first =? and last ?=
+            //    }
+
+            //    // remove text before encoded segment and encoded segment of S
+            //    s = s.Substring(endEncodedSegment, s.Length - endEncodedSegment);
+
+            //    encodedSegment = encodedSegment.Replace("_", " "); // the spaces in the original text are changed to underline
+
+            //    string encodeName = encodedSegment.Substring(0, encodedSegment.IndexOf("?")); // get the encoding name - Ex: ISO-8859-1
+            //    Encoding enc = Encoding.GetEncoding(encodeName);
+
+            //    // Define the encoding type - B for base64, Q for QuotedPrintable
+            //    char contentTransferEncoding = ' ';
+
+            //    if (encodedSegment.IndexOf("?B?") > -1)
+            //    {
+            //        contentTransferEncoding = 'B';
+            //    }
+            //    else if (encodedSegment.IndexOf("?Q?") > -1)
+            //    {
+            //        contentTransferEncoding = 'Q';
+            //    }
+
+            //    // decode
+            //    try
+            //    {
+            //        if (contentTransferEncoding == 'B')
+            //        {
+            //            encodedSegment = encodedSegment.Replace(encodeName + "?B?", "");
+            //            byte[] decodedBytes = Convert.FromBase64String(encodedSegment);
+            //            encodedSegment = enc.GetString(decodedBytes);
+            //        }
+            //        else if (contentTransferEncoding == 'Q')
+            //        {
+            //            encodedSegment = encodedSegment.Replace(encodeName + "?Q?", "");
+            //            encodedSegment = QuotedPrintable.Decode(encodedSegment).Replace("\r\n", "");
+            //        }
+            //    }
+            //    catch
+            //    { // Malformed text
+            //        encodedSegment = originalSegment;
+            //    }
+
+            //    decodedText += encodedSegment;
+            //}
+
+            //return decodedText;
+            #endregion Solution 1
+
+            #region Solution 2
+            //if (s.StartsWith("=?") && s.EndsWith("?="))
+            //{
+            //    // if it is, get parts (=? encoding ? transferEncodingId ? subject ?=)
+            //    string data = s.Substring(2, s.Length - 4);
+            //    int indexOfSplit = data.IndexOf("?");
+
+            //    // encoding
+            //    string encoding = data.Substring(0, indexOfSplit);
+            //    Encoding enc = Encoding.GetEncoding(encoding);
+
+            //    // get type of encoding - B for base64, Q for QuotedPrintable
+            //    char contentTransferEncoding = data[indexOfSplit + 1];
+
+            //    // subject
+            //    string subject = data.Substring(indexOfSplit + 3);
+
+            //    // decode
+            //    if (contentTransferEncoding == 'B')
+            //    {
+            //        byte[] decodedBytes = Convert.FromBase64String(subject);
+            //        return enc.GetString(decodedBytes);
+            //    }
+            //    else if (contentTransferEncoding == 'Q')
+            //    {
+            //        return QuotedPrintable.Decode(subject).Replace("\r\n", "");
+            //    }
+            //}
+            //else
+            //{
+            //    return s;
+            //}
+            #endregion Solution 2
+
             while (s.Contains("=?"))
             {
-                int p1 = s.IndexOf("=?");         // "...|=?enc?b?xxxx?=..."
-                int p2 = s.IndexOf('?', p1 + 2);  // "...=?enc|?b?xxxx?=..."
+                int start = s.IndexOf("=?"); // "[...|=?enc?b?xxxx?=..."
+                int system = s.IndexOf('?', start + 2); // "...=?[enc|?b?xxxx?=..."
 
-                p2 = s.IndexOf("?=", p2 + 3);     // "...=?enc?b?xxxx|?=..."
-                string ss = s.Substring(p1, p2 + 2 - p1); // "=?enc?b?xxxx?="
+                int end = s.IndexOf("?=", system + 3); // "...=?enc?b?[xxxx|?=..."
+                int length = end + 2 - start;
+
+                string ss = s.Substring(start, length); // "...[=?enc?b?xxxx?=]..."
 
                 ss = Attachment.CreateAttachmentFromString("", ss).Name; //lifehack!
 
-                s = s.Remove(p1, p2 + 2 - p1).Insert(p1, ss); // "...XXXX..."
+                s = s.Remove(start, length).Insert(start, ss); // "...[XXXX]..."
             }
 
             return s;
@@ -470,8 +667,21 @@ namespace Mime
             {
                 case TransferEncoding.SevenBit:
                 case TransferEncoding.EightBit:
-                    //nothing to do
-                    SaveMessageBody(message, transferEncodedMessage);
+                    if (message.MediaMainType == "application" || message.MediaMainType == "image")
+                    {
+                        //Content-Type: application/octet-stream;
+                        //    name="file_name.txt"
+                        //Content-Transfer-Encoding: 7bit
+
+                        byte[] asciiBodyBytes = Encoding.ASCII.GetBytes(transferEncodedMessage);
+                        message.ContentStream = new MemoryStream(asciiBodyBytes, false);
+                        SaveAttachment(message);
+                        isAttachmentSaved = true;
+                    }
+                    else
+                    {
+                        SaveMessageBody(message, transferEncodedMessage);
+                    }
                     break;
 
                 case TransferEncoding.Base64:
